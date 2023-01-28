@@ -9,3 +9,6 @@ scaffold services
 
 ### step2
 scaffold services and db
+
+### step3
+scaffold multilang services
