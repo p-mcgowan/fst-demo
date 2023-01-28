@@ -1,7 +1,7 @@
 version: "3.7"
 
-${services()}
+${await services()}
 
 networks:
-  ${project}-network:
-    name: ${project}-network
+  backend-network:
+    name: backend-network

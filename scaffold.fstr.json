@@ -12,7 +12,7 @@
     },
     {
       "name": "compose-demo",
-      "to": ".",
+      "to": "docker",
       "from": "templates/compose",
       "depends": [
         "backend",
@@ -23,6 +23,10 @@
           "backend": { "name": "backend" },
           "workers": { "name": "workers" }
         }
+      },
+      "fileHandler": "./fstr/compose.js",
+      "scripts": {
+        "before": "rm -f docker-compose.yml"
       }
     }
   ]
