@@ -1,125 +1,101 @@
 import { Recipe, Renderer, RenderFunction } from '@acrontum/filesystem-template';
 import { promises } from 'fs';
+import { relative } from 'path';
 
-const service = () => {
-  []
-}
-
-`main-backend:
-    container_name: main-backend
-    build:
-      network: host
-      context: ../main-backend
-    env_file:
-      - ../main-backend/.env.example
-      - ./.env
-    environment:
-      - PORT=${'MAIN_BACKEND_PORT'}
-      - PGHOST=pg.test
-      - NODE_ENV=production
-    ports:
-      - "5000:5000"
-    depends_on:
-      - db
-    networks:
-      - backend-network
-    volumes:
-      - ../main-backend/server.ts:/code/server.ts
-      - ../main-backend/tsconfig.json:/code/tsconfig.json
-      - ../main-backend/tsconfig.prod.json:/code/tsconfig.prod.json
-      - ../main-backend/src:/code/src/
-      - ../main-backend/openapi-nodegen-api-file.yml:/code/openapi-nodegen-api-file.yml
-    working_dir: /code
-    command: watch
-
-  db:
-    container_name: db
-    image: postgres:13.6
-    restart: always
-    env_file:
-      - ./.env
-    environment:
-      - PGHOST=pg.test
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5432:5432"
-    networks:
-      backend-network:
-        aliases:
-          - pg.test
-    volumes:
-      - ./volumes/pg:/var/lib/postgresql/data
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1g
-    logging:
-      driver: none
-
-  parts-api:
-    container_name: parts-api
-    build:
-      context: ./parts-api/
-      network: host
-    networks:
-      - backend-network
-    environment:
-      - PORT=9999
-      - BASE_URL=http://localhost:9999
-    init: true
-    ports:
-      - "9999:9999"
-
-  service-case-backend:
-    depends_on:
-      - java-common
-      - db
-    container_name: service-case-backend
-    build:
-      network: host
-      context: ../service-case-backend
-      args:
-        ADDITIONAL_GRADLE_PARAMS: -x test
-    environment:
-      - PORT=${'SERVICE_CASE_BACKEND_PORT'}
-      - INITIAL_RAM_PERCENTAGE=5
-      - MAX_RAM_PERCENTAGE=20
-    networks:
-      - backend-network
-    ports:
-      - "5003:8080"
-    env_file:
-      - .env.example
-      - .env
-
-networks:
-  ${'project'}-network:
-    name: ${'project'}-network
-`
-
-const services = (recipe: Recipe): string => {
-  for (const service of recipe.data.services) {
-    console.log(recipe.map[service]);
-  }
-
-  return `\
-services:
-  abcd:
-    container_name: "yolo"
-    image: nginx`
-}
-
-export const render: RenderFunction = (recipe: Recipe, renderer: Renderer) => {
-  renderer.onFile(async (node) => {
-    if (node.name === 'docker-compose.yml') {
-      const template = await promises.readFile(node.fullSourcePath, 'utf8');
-
-      for (const output of node.getGenerationTargets()) {
-        renderer.renderAsTemplateString(template, { project: recipe.name, services })
-      }
-    }
-  })
+const baseDocker = (name: string, path: string): string[] => {
+  return [
+    `  ${name}:`,
+    `    container_name: ${name}`,
+    '    build:',
+    `      context: ${path}`,
+    '      network: host',
+    '    networks:',
+    '      - backend-network',
+    '    env_file:',
+    '      - ./.env',
+  ];
 };
 
-exports = render;
+const getServiceForType = {
+  postgres: (name: string, path: string) => {
+    return [
+      `  ${name}:`,
+      `    container_name: ${name}`,
+      '    image: postgres:13.6',
+      '    restart: always',
+      '    env_file:',
+      '      - ./.env',
+      '    environment:',
+      '      - POSTGRES_PASSWORD=postgres',
+      '    ports:',
+      '      - "5432:5432"',
+      '    networks:',
+      '      - backend-network',
+      '    volumes:',
+      '      - ./volumes/pg:/var/lib/postgresql/data',
+    ].join('\n');
+  },
+  node: (name: string, path: string, type: string) => {
+    return baseDocker(name, path).concat(['    environment:', '      NODE_ENV: "production"']).join('\n');
+  },
+  java: (name: string, path: string, type: string) => {
+    return baseDocker(name, path).concat(['    environment:', '      MEM_USAGE: "600TB"']).join('\n');
+  },
+};
+
+const detectTemplateType = async (path: string) => {
+  const files = await promises.readdir(path);
+  for (const file of files) {
+    if (file === 'package.json') {
+      return 'node';
+    }
+    if (file === 'build.gradle') {
+      return 'java';
+    }
+  }
+
+  return 'default';
+};
+
+const getServiceBuilder = (recipe: Recipe): (() => Promise<string>) => {
+  return async () => {
+    const services: string[] = [];
+
+    for (const [name, service] of Object.entries(recipe.data.services) as [string, { name: string; type: string }][]) {
+      const serviceRecipe = recipe.map[name];
+      const templateType = (service as any).type || (await detectTemplateType(serviceRecipe.to));
+
+      services.push(getServiceForType[templateType](service?.name || name, serviceRecipe?.to ? relative(recipe.to, serviceRecipe?.to) : ''));
+    }
+    if (services.length === 0) {
+      return '';
+    }
+
+    return `services:\n${services.join('\n\n')}`;
+  };
+};
+
+const render: RenderFunction = (recipe: Recipe, renderer: Renderer) => {
+  const services = getServiceBuilder(recipe);
+
+  renderer.onFile(async (node) => {
+    if (node.name !== 'docker-compose.yml') {
+      if (node.isDir && node.name === 'fstr') {
+        node.skip = true;
+      }
+
+      return;
+    }
+
+    const template = await promises.readFile(node.fullSourcePath, 'utf8');
+
+    for (const output of node.getGenerationTargets()) {
+      const content = await renderer.renderAsTemplateString(template, { project: recipe.name, services });
+      await promises.writeFile(output, content);
+
+      return [output];
+    }
+  });
+};
+
+module.exports = render;

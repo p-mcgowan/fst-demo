@@ -1,0 +1,42 @@
+{
+  "to": "output",
+  "recipes": [
+    {
+      "name": "backend",
+      "to": "backend",
+      "from": "../templates/node-backend"
+    },
+    {
+      "name": "macroservice",
+      "to": "macroservice",
+      "from": "../templates/java-backend"
+    },
+    {
+      "name": "workers",
+      "to": "backend/workers",
+      "depends": ["backend"],
+      "from": "../templates/node-backend"
+    },
+    {
+      "name": "compose-demo",
+      "to": "docker",
+      "from": "../templates/compose",
+      "depends": [
+        "backend",
+        "workers"
+      ],
+      "data": {
+        "services": {
+          "backend": { "name": "backend" },
+          "workers": { "name": "workers" },
+          "macroservice": { "name": "macroservice" },
+          "db": { "name": "db", "type": "postgres" }
+        }
+      },
+      "fileHandler": "./fstr/compose.js",
+      "scripts": {
+        "before": "rm -f docker-compose.yml"
+      }
+    }
+  ]
+}
