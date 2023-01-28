@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@acrontum/filesystem-template": "^0.0.2"
+  }
+}

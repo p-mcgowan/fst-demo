@@ -1,0 +1,7 @@
+version: "3.7"
+
+${services()}
+
+networks:
+  ${project}-network:
+    name: ${project}-network

@@ -1,0 +1,29 @@
+{
+  "recipes": [
+    {
+      "name": "backend",
+      "to": "backend",
+      "from": "templates/node-backend"
+    },
+    {
+      "name": "workers",
+      "to": "workers",
+      "from": "templates/node-backend"
+    },
+    {
+      "name": "compose-demo",
+      "to": ".",
+      "from": "templates/compose",
+      "depends": [
+        "backend",
+        "workers"
+      ],
+      "data": {
+        "services": {
+          "backend": { "name": "backend" },
+          "workers": { "name": "workers" }
+        }
+      }
+    }
+  ]
+}
