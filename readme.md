@@ -9,3 +9,10 @@ scaffold services
 ```bash
 fst scaffold.fstr.json
 ```
+### step2
+scaffold services and db
+
+```bash
+fst scaffold.fstr.json
+```
+files are in output
