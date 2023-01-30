@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "before": "rm -rf workers docker backend"
+  },
   "recipes": [
     {
       "name": "backend",
