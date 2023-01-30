@@ -16,3 +16,11 @@ scaffold services and db
 fst scaffold.fstr.json
 ```
 files are in output
+
+### step3
+scaffold services and db
+
+```bash
+fst scaffold.fstr.json
+```
+files are in output

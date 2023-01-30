@@ -10,6 +10,11 @@
       "from": "../templates/node-backend"
     },
     {
+      "name": "macroservice",
+      "to": "macroservice",
+      "from": "../templates/java-backend"
+    },
+    {
       "name": "workers",
       "to": "backend/workers",
       "depends": ["backend"],
@@ -27,6 +32,7 @@
         "services": {
           "backend": { "name": "backend" },
           "workers": { "name": "workers" },
+          "macroservice": { "name": "macroservice" },
           "db": { "name": "db", "type": "postgres" }
         }
       },
