@@ -14,18 +14,7 @@
           "to": "../backend",
           "scripts": {
             "after": "npm run gen"
-          },
-          "recipes": [
-            {
-              "name": "postgen",
-              "from": "../templates/tastier",
-              "to": ".",
-              "scripts": {
-                "before": "cd $FST_SRC && npm i && npm run build"
-              },
-              "fileHandler": "tastier.js"
-            }
-          ]
+          }
         }
       ]
     }

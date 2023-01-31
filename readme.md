@@ -20,10 +20,3 @@ add path, generate, build, err
 fst generate.fstr.json
 # fix
 ```
-
-### step3
-add path, generate, build, err
-
-```bash
-fst generate.fstr.json
-```
