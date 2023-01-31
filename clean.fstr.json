@@ -1,0 +1,6 @@
+{
+  "to": "backend",
+  "scripts": {
+    "before": "git checkout -- .; git clean -df ."
+  }
+}

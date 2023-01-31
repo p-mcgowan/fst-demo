@@ -1,0 +1,12 @@
+{
+  "name": "spec",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo \"release/api.yml\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

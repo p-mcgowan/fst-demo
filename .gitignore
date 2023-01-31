@@ -2,3 +2,5 @@ node_modules
 dist
 .fst
 output
+.openapi-nodegen
+build
