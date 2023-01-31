@@ -12,11 +12,3 @@ cd spec && npm run build
 cd ../backend && npm run gen
 # fix
 ```
-
-### step2
-add path, generate, build, err
-
-```bash
-fst generate.fstr.json
-# fix
-```
